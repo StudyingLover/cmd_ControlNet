@@ -10,24 +10,23 @@ import argparse
 
 from pytorch_lightning import seed_everything
 from annotator.util import resize_image, HWC3
-from annotator.openpose import OpenposeDetector
+from annotator.mlsd import MLSDdetector
 from cldm.model import create_model, load_state_dict
 from cldm.ddim_hacked import DDIMSampler
 
 
-
-apply_openpose = OpenposeDetector()
+apply_mlsd = MLSDdetector()
 
 model = create_model('./models/cldm_v15.yaml').cpu()
-model.load_state_dict(load_state_dict('./models/control_sd15_openpose.pth', location='cuda'))
+model.load_state_dict(load_state_dict('./models/control_sd15_mlsd.pth', location='cuda'))
 model = model.cuda()
 ddim_sampler = DDIMSampler(model)
 
 
-def process(input_image, prompt, a_prompt, n_prompt, num_samples, image_resolution, detect_resolution, ddim_steps, guess_mode, strength, scale, seed, eta):
+def process(input_image, prompt, a_prompt, n_prompt, num_samples, image_resolution, detect_resolution, ddim_steps, guess_mode, strength, scale, seed, eta, value_threshold, distance_threshold):
     with torch.no_grad():
         input_image = HWC3(input_image)
-        detected_map, _ = apply_openpose(resize_image(input_image, detect_resolution))
+        detected_map = apply_mlsd(resize_image(input_image, detect_resolution), value_threshold, distance_threshold)
         detected_map = HWC3(detected_map)
         img = resize_image(input_image, image_resolution)
         H, W, C = img.shape
@@ -65,9 +64,9 @@ def process(input_image, prompt, a_prompt, n_prompt, num_samples, image_resoluti
         x_samples = (einops.rearrange(x_samples, 'b c h w -> b h w c') * 127.5 + 127.5).cpu().numpy().clip(0, 255).astype(np.uint8)
 
         results = [x_samples[i] for i in range(num_samples)]
-    return [detected_map] + results
+    return [255 - cv2.dilate(detected_map, np.ones(shape=(3, 3), dtype=np.uint8), iterations=1)] + results
 
-def test():
+if '__main__' == __name__:
     img=cv2.imread('./test_imgs/man.png')
     prompt='1girl,beautiful background,beautiful face,beazutiful clothes,normal face'
     a_prompt='best quality, extremely detailed'
@@ -84,11 +83,6 @@ def test():
 
     # ips=[img, prompt, a_prompt, n_prompt, num_samples, image_resolution, ddim_steps, guess_mode, strength, scale, seed, eta, low_threshold, high_threshold]
     out=process(img, prompt, a_prompt, n_prompt, num_samples, image_resolution, detect_resolution, ddim_steps, guess_mode, strength, scale, seed, eta)
-    cv2.imshow('out',out[1])
-    cv2.imwrite('out.png',out[1])
-    print('saved to out.png')
-
-if '__main__' == __name__:
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--run_test', type=bool, default=False, help='run a easy test')
@@ -107,11 +101,15 @@ if '__main__' == __name__:
     parser.add_argument('--scale', type=float, default=9.0, help='scale')
     parser.add_argument('--seed', type=int, default=-1, help='seed')
     parser.add_argument('--eta', type=float, default=0.0, help='eta')
+    parser.add_argument('--value_threshold', type=float, default=0.1, help='value threshold')
+    parser.add_argument('--distance_threshold', type=float, default=0.1, help='distance threshold')
+    
+    #value_threshold, distance_threshold
 
     opt = parser.parse_args()
 
     img=cv2.imread(opt.image_path)
-    out=process(img, opt.prompt, opt.a_prompt, opt.n_prompt, opt.num_samples, opt.image_resolution, opt.detect_resolution, opt.ddim_steps, opt.guess_mode, opt.strength, opt.scale, opt.seed, opt.eta)
+    out=process(img, opt.prompt, opt.a_prompt, opt.n_prompt, opt.num_samples, opt.image_resolution, opt.detect_resolution, opt.ddim_steps, opt.guess_mode, opt.strength, opt.scale, opt.seed, opt.eta, opt.value_threshold,opt.distance_threshold)
 
     if(opt.is_show):
         cv2.imshow('out',out[1])

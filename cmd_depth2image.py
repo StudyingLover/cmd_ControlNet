@@ -10,16 +10,15 @@ import argparse
 
 from pytorch_lightning import seed_everything
 from annotator.util import resize_image, HWC3
-from annotator.openpose import OpenposeDetector
+from annotator.midas import MidasDetector
 from cldm.model import create_model, load_state_dict
 from cldm.ddim_hacked import DDIMSampler
 
 
-
-apply_openpose = OpenposeDetector()
+apply_midas = MidasDetector()
 
 model = create_model('./models/cldm_v15.yaml').cpu()
-model.load_state_dict(load_state_dict('./models/control_sd15_openpose.pth', location='cuda'))
+model.load_state_dict(load_state_dict('./models/control_sd15_depth.pth', location='cuda'))
 model = model.cuda()
 ddim_sampler = DDIMSampler(model)
 
@@ -27,12 +26,12 @@ ddim_sampler = DDIMSampler(model)
 def process(input_image, prompt, a_prompt, n_prompt, num_samples, image_resolution, detect_resolution, ddim_steps, guess_mode, strength, scale, seed, eta):
     with torch.no_grad():
         input_image = HWC3(input_image)
-        detected_map, _ = apply_openpose(resize_image(input_image, detect_resolution))
+        detected_map, _ = apply_midas(resize_image(input_image, detect_resolution))
         detected_map = HWC3(detected_map)
         img = resize_image(input_image, image_resolution)
         H, W, C = img.shape
 
-        detected_map = cv2.resize(detected_map, (W, H), interpolation=cv2.INTER_NEAREST)
+        detected_map = cv2.resize(detected_map, (W, H), interpolation=cv2.INTER_LINEAR)
 
         control = torch.from_numpy(detected_map.copy()).float().cuda() / 255.0
         control = torch.stack([control for _ in range(num_samples)], dim=0)
@@ -67,29 +66,7 @@ def process(input_image, prompt, a_prompt, n_prompt, num_samples, image_resoluti
         results = [x_samples[i] for i in range(num_samples)]
     return [detected_map] + results
 
-def test():
-    img=cv2.imread('./test_imgs/man.png')
-    prompt='1girl,beautiful background,beautiful face,beazutiful clothes,normal face'
-    a_prompt='best quality, extremely detailed'
-    n_prompt='longbody, lowres, bad anatomy, bad hands, missing fingers, extra digit, fewer digits, cropped, worst quality, low quality'
-    num_samples=1
-    image_resolution=512
-    detect_resolution=512
-    ddim_steps=60
-    guess_mode=False
-    strength=1.0
-    scale=9.0
-    seed=-1
-    eta=0.0
-
-    # ips=[img, prompt, a_prompt, n_prompt, num_samples, image_resolution, ddim_steps, guess_mode, strength, scale, seed, eta, low_threshold, high_threshold]
-    out=process(img, prompt, a_prompt, n_prompt, num_samples, image_resolution, detect_resolution, ddim_steps, guess_mode, strength, scale, seed, eta)
-    cv2.imshow('out',out[1])
-    cv2.imwrite('out.png',out[1])
-    print('saved to out.png')
-
 if '__main__' == __name__:
-
     parser = argparse.ArgumentParser()
     parser.add_argument('--run_test', type=bool, default=False, help='run a easy test')
     parser.add_argument('--image_path', type=str, default='test.png', help='original image path')
@@ -107,7 +84,7 @@ if '__main__' == __name__:
     parser.add_argument('--scale', type=float, default=9.0, help='scale')
     parser.add_argument('--seed', type=int, default=-1, help='seed')
     parser.add_argument('--eta', type=float, default=0.0, help='eta')
-
+    
     opt = parser.parse_args()
 
     img=cv2.imread(opt.image_path)
@@ -118,3 +95,4 @@ if '__main__' == __name__:
     if(opt.is_saved):
         cv2.imwrite('out.png',out[1])
         print('saved to out.png')
+    
