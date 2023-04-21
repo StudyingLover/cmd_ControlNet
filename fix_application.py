@@ -23,4 +23,6 @@ if '__main__' == __name__:
     
     img=url_to_cv2('https://drive.studyinglover.com/api/raw/?path=/photos/blog/background/1679397008541.png')
     
-    cmd_canny2image.process(img,describe)
+    out=cmd_canny2image.process(img,describe)
+
+    cv.imwrite('out.png',out)
