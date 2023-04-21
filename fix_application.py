@@ -25,4 +25,4 @@ if '__main__' == __name__:
     
     out=cmd_canny2image.process(img,describe)
 
-    cv.imwrite('out.png',out)
+    cv.imwrite('out.png',out[1])
