@@ -17,17 +17,17 @@ https://www.zhihu.com/question/550101073/answer/2931261853)
 
 ## TODO
 - [x] CLIP_interrogator
-- [] ControlNet关键函数提取 
-- 没想法了，欢迎大家PR
+- [ ] ControlNet关键函数提取 
+- [ ] 没想法了，欢迎大家PR
 
 |名称|描述|改造|测试|
 |--|--|--|--|
 |canny|边缘图|完成|完成|
 |depth|深度图|完成|未进行|
-|hough|线段识别，识别人物功能极差，非常适合建筑|未进行|
-|hed|边缘检测但保留更多细节，适合重新着色和风格化|未进行|未进行|
-|normal_map|根据图片生成法线贴图，非常适合CG建模师|未进行|未进行|
+|hough|线段识别，识别人物功能极差，非常适合建筑|已完成||未进行|
+|hed|边缘检测但保留更多细节，适合重新着色和风格化|已完成|未进行|
+|normal_map|根据图片生成法线贴图，非常适合CG建模师|已完成|未进行|
 |openpose|人物姿势|完成|完成|
-|scribble|黑白稿|未进行|未进行|
-|fake_scribble|涂鸦风格|未进行|未进行|
-|segmentation|分割图|未进行|未进行|
+|scribble|黑白稿|已完成|未进行|
+|fake_scribble|涂鸦风格|已完成|未进行|
+|segmentation|分割图|已完成|未进行|
