@@ -23,7 +23,7 @@ model = model.cuda()
 ddim_sampler = DDIMSampler(model)
 
 
-def process(input_image, prompt, a_prompt, n_prompt, num_samples, image_resolution, ddim_steps, guess_mode, strength, scale, seed, eta, low_threshold, high_threshold):
+def process(input_image, prompt, a_prompt='best quality, extremely detailed', n_prompt='longbody, lowres, bad anatomy, bad hands, missing fingers, extra digit, fewer digits, cropped, worst quality, low quality', num_samples=1, image_resolution=516, ddim_steps=30, guess_mode=False, strength=1.0, scale=9.0, seed=-1, eta=0.0, low_threshold=100, high_threshold=200):
     with torch.no_grad():
         img = resize_image(HWC3(input_image), image_resolution)
         H, W, C = img.shape

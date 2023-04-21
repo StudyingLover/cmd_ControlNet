@@ -24,7 +24,7 @@ model = model.cuda()
 ddim_sampler = DDIMSampler(model)
 
 
-def process(input_image, prompt, a_prompt, n_prompt, num_samples, image_resolution, detect_resolution, ddim_steps, guess_mode, strength, scale, seed, eta):
+def process(input_image, prompt, a_prompt='best quality, extremely detailed', n_prompt='longbody, lowres, bad anatomy, bad hands, missing fingers, extra digit, fewer digits, cropped, worst quality, low quality', num_samples=1, image_resolution=516, detect_resolution=516, ddim_steps=30, guess_mode=False, strength=1.0, scale=9.0, seed=-1, eta=0.0):
     with torch.no_grad():
         input_image = HWC3(input_image)
         detected_map, _ = apply_openpose(resize_image(input_image, detect_resolution))
